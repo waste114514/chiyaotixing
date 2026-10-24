@@ -275,7 +275,7 @@
     if (state.view === 'settings-debug') return '调试';
     if (state.view === 'settings-about') return '关于';
     if (state.view === 'sub') return state.subTab === 'history' ? '记录' : '药品';
-    return '吃药提醒';
+    return '药点';
   }
 
   function updateTopbar() {
@@ -729,11 +729,12 @@
     var s = state.status || {};
     return '<h1 class="page-title">关于</h1>' +
       '<section class="card">' +
-      '<p><strong>吃药提醒</strong> ' + esc(s.versionName || '') + '</p>' +
+      '<p><strong>药点</strong> ' + esc(s.versionName || '') + '</p>' +
       '<p class="small muted">完全离线，不联网，不上传。所有数据保存在本机应用私有目录。</p>' +
       '<p class="small muted">本应用只负责提醒和记录，用药方案请遵医嘱。</p>' +
       '<p class="small muted">设置图标来自 Lucide（ISC 许可）。</p>' +
-      '<p class="small muted">开源地址：暂未发布。</p>' +
+      '<p class="small muted">开源地址：github.com/waste114514/yaodian</p>' +
+      '<button type="button" class="btn btn-secondary btn-block" data-action="open-repo">在浏览器中打开项目主页</button>' +
       '</section>';
   }
 
@@ -1100,6 +1101,14 @@
         showToast('照片已删除');
       } else {
         showToast(removed && removed.error ? removed.error : '删除失败');
+      }
+      return;
+    }
+
+    if (action === 'open-repo') {
+      var repo = api('openRepo');
+      if (!repo || !repo.ok) {
+        showToast(repo && repo.error ? repo.error : '没有可用的浏览器');
       }
       return;
     }

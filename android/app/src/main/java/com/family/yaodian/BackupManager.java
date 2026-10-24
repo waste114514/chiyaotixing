@@ -122,7 +122,7 @@ public final class BackupManager {
         try {
             root = new JSONObject(text);
         } catch (Exception error) {
-            throw new Exception("这不是吃药提醒的备份文件");
+            throw new Exception("这不是药点的备份文件");
         }
         if (!APP.equals(root.optString("app")) || root.optInt("format", 0) != FORMAT) {
             throw new Exception("备份格式不支持，请用本 App 导出的文件");

@@ -1,6 +1,6 @@
 # 隐私说明
 
-吃药提醒是一个完全本地的应用。
+药点是一个完全本地的应用。
 
 ## 不做什么
 
@@ -28,7 +28,7 @@ files/med_data/
 
 | 权限 | 用途 |
 |---|---|
-| `POST_NOTIFICATIONS` | 显示吃药提醒通知（Android 13+ 需要用户允许） |
+| `POST_NOTIFICATIONS` | 显示药点通知（Android 13+ 需要用户允许） |
 | `RECEIVE_BOOT_COMPLETED` | 重启后恢复提醒 |
 | `VIBRATE` | 通知震动能力 |
 

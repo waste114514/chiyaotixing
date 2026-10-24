@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>吃药提醒 · 界面预览</title>
+  <title>药点 · 界面预览</title>
   <link rel="stylesheet" href="../web/style.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
         <span aria-hidden="true">‹</span>
       </button>
       <div class="topbar-title">
-        <div class="app-name" id="topTitle">吃药提醒</div>
+        <div class="app-name" id="topTitle">药点</div>
         <div class="app-sub" id="dateLine">本地提醒 · 不联网</div>
       </div>
       <button type="button" class="topbar-gear" id="gearBtn" data-action="open-settings" aria-label="设置">
@@ -326,6 +326,7 @@
         pickPhoto: function () { return JSON.stringify({ ok: true }); },
         removePhoto: function () { return JSON.stringify({ ok: true }); },
         getPhoto: function () { return ''; },
+        openRepo: function () { return JSON.stringify({ ok: true }); },
         sendTestNotification: function () { return JSON.stringify({ ok: true }); },
         previewLockCard: function () { return JSON.stringify({ ok: true }); },
         exportBackup: function () { return JSON.stringify({ ok: true }); },
