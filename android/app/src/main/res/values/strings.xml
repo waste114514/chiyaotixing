@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">吃药提醒</string>
+    <string name="title_activity_main">吃药提醒</string>
+    <string name="package_name">com.family.yaodian</string>
+    <string name="custom_url_scheme">com.family.yaodian</string>
+    <string name="lock_card_service_label">锁屏吃药卡片</string>
+    <string name="accessibility_service_description">在锁屏上显示吃药卡片，可直接确认。只绘制卡片，不读取屏幕内容。</string>
+</resources>

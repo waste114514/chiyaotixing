@@ -1,0 +1,11 @@
+{
+  "appId": "com.family.yaodian",
+  "appName": "吃药提醒",
+  "webDir": "web",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#FFFDF7"
+  }
+}

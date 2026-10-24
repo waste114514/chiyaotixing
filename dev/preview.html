@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>吃药提醒 · 界面预览</title>
+  <link rel="stylesheet" href="../web/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button type="button" class="topbar-back" id="backBtn" data-action="settings-back" aria-label="返回" hidden>
+        <span aria-hidden="true">‹</span>
+      </button>
+      <div class="topbar-title">
+        <div class="app-name" id="topTitle">吃药提醒</div>
+        <div class="app-sub" id="dateLine">本地提醒 · 不联网</div>
+      </div>
+      <button type="button" class="topbar-gear" id="gearBtn" data-action="open-settings" aria-label="设置">
+        <svg class="gear-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span class="gear-label">设置</span>
+      </button>
+    </header>
+    <main class="main" id="main"><div class="loading">正在读取…</div></main>
+    <nav class="tabbar" id="tabbar" aria-label="主要页面"></nav>
+  </div>
+  <section class="sheet" id="sheet" aria-modal="true" role="dialog" aria-label="编辑药品"></section>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      'use strict';
+      var plan = {
+        schema: 1,
+        dayBoundary: '04:00',
+        fontScale: 1,
+        uiMode: 'normal',
+        photoMode: 'off',
+        meals: [
+          { id: 'meal-1', label: '第 1 顿' },
+          { id: 'meal-2', label: '第 2 顿' },
+          { id: 'meal-3', label: '第 3 顿' }
+        ],
+        medicines: [
+          { id: 'med-1', name: '阿司匹林', amount: '1 片', mealId: 'meal-1', timing: 'before', enabled: true },
+          { id: 'med-2', name: '二甲双胍', amount: '1 片', mealId: 'meal-1', timing: 'before', enabled: true },
+          { id: 'med-3', name: '维生素 D', amount: '1 粒', mealId: 'meal-1', timing: 'after', enabled: true },
+          { id: 'med-4', name: '降压药', amount: '1 片', mealId: 'meal-2', timing: 'before', enabled: true },
+          { id: 'med-5', name: '钙片', amount: '2 片', mealId: 'meal-3', timing: 'after', enabled: true }
+        ]
+      };
+      var confirmed = {};
+      var results = {};
+      var lastUndo = null;
+      var currentKey = 'meal-1|before';
+      var finished = false;
+
+      function nowIso() {
+        var d = new Date();
+        function p(n) { return n < 10 ? '0' + n : String(n); }
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) +
+          'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()) + '+08:00';
+      }
+
+      function getStages() {
+        var stages = [];
+        plan.meals.forEach(function (meal, mealIndex) {
+          ['before', 'after'].forEach(function (timing) {
+            var meds = plan.medicines.filter(function (m) {
+              var mealIds = (m.mealIds && m.mealIds.length) ? m.mealIds : [m.mealId];
+              return m.enabled !== false && mealIds.indexOf(meal.id) >= 0 && (m.timing || 'before') === timing;
+            });
+            if (!meds.length) return;
+            var before = timing === 'before';
+            stages.push({
+              key: meal.id + '|' + timing,
+              mealId: meal.id,
+              mealLabel: meal.label,
+              timing: timing,
+              title: meal.label + ' · ' + (before ? '饭前' : '饭后'),
+              subtitle: before ? '吃饭前吃' : '吃完饭后吃',
+              confirmLabel: before ? (meds.length > 1 ? '全部已吃' : '已吃') : '吃完后确认',
+              mealIndex: mealIndex + 1,
+              medicines: meds.map(function (m) {
+                return { id: m.id, name: m.name, amount: m.amount, photo: m.photo || '' };
+              })
+            });
+          });
+        });
+        return stages;
+      }
+
+      function advance() {
+        var stages = getStages();
+        var index = -1;
+        stages.forEach(function (s, i) { if (s.key === currentKey) index = i; });
+        var next = null;
+        for (var i = index + 1; i < stages.length; i++) {
+          if (!results[stages[i].key]) { next = stages[i]; break; }
+        }
+        if (next) { currentKey = next.key; finished = false; }
+        else { currentKey = ''; finished = true; }
+      }
+
+      function captureUndo(stage) {
+        if (!stage) return;
+        lastUndo = {
+          at: Date.now(),
+          stageKey: stage.key,
+          label: stage.title,
+          prevStageKey: currentKey,
+          prevFinished: finished,
+          prevConfirmed: (confirmed[stage.key] || []).slice(),
+          prevResult: results[stage.key] ? JSON.parse(JSON.stringify(results[stage.key])) : null
+        };
+      }
+
+      function undoNow() {
+        if (!lastUndo) return;
+        var u = lastUndo;
+        currentKey = u.prevStageKey;
+        finished = u.prevFinished;
+        confirmed[u.stageKey] = u.prevConfirmed;
+        if (u.prevResult) results[u.stageKey] = u.prevResult;
+        else delete results[u.stageKey];
+        lastUndo = null;
+      }
+
+      function getToday() {
+        var stages = getStages();
+        var outStages = stages.map(function (stage) {
+          var status = results[stage.key] ? results[stage.key].status
+            : (stage.key === currentKey && !finished ? 'current' : 'upcoming');
+          var meds = stage.medicines.map(function (m) {
+            return { id: m.id, name: m.name, amount: m.amount,
+              confirmed: (confirmed[stage.key] || []).indexOf(m.id) >= 0 };
+          });
+          return Object.assign({}, stage, {
+            status: status,
+            statusLabel: status === 'done' ? '已完成' : status === 'skipped' ? '已跳过'
+              : status === 'current' ? '现在吃' : '还没到',
+            at: results[stage.key] ? results[stage.key].at : '',
+            medicines: meds
+          });
+        });
+        var current = null;
+        var stage = stages.filter(function (s) { return s.key === currentKey; })[0];
+        if (stage && !finished) {
+          var ids = confirmed[stage.key] || [];
+          var meds = stage.medicines.map(function (m) {
+            return { id: m.id, name: m.name, amount: m.amount, confirmed: ids.indexOf(m.id) >= 0 };
+          });
+          current = Object.assign({}, stage, {
+            medicines: meds,
+            confirmedCount: meds.filter(function (m) { return m.confirmed; }).length,
+            remaining: meds.filter(function (m) { return !m.confirmed; }).length,
+            stageIndex: stages.indexOf(stage) + 1,
+            stageCount: stages.length
+          });
+        }
+        var done = outStages.filter(function (s) { return s.status === 'done'; }).length;
+        var skipped = outStages.filter(function (s) { return s.status === 'skipped'; }).length;
+        return JSON.stringify({
+          ok: true,
+          date: '2026-10-24',
+          dateLabel: '10月24日 星期六',
+          mealCount: plan.meals.length,
+          hasMeds: plan.medicines.length > 0,
+          totalMeds: plan.medicines.length,
+          fontScale: plan.fontScale,
+          uiMode: plan.uiMode,
+          photoMode: plan.photoMode,
+          finished: finished,
+          current: current,
+          stages: outStages,
+          counts: { total: stages.length, done: done, skipped: skipped,
+            remaining: stages.length - done - skipped },
+          undo: lastUndo && (Date.now() - lastUndo.at < 600000)
+            ? { available: true, label: lastUndo.label,
+                secondsLeft: Math.round((600000 - (Date.now() - lastUndo.at)) / 1000) }
+            : null
+        });
+      }
+
+      function todayResult() { return getToday(); }
+
+      function confirmMed(stageKey, medId) {
+        if (stageKey !== currentKey || finished) return getToday();
+        var stage = getStages().filter(function (s) { return s.key === stageKey; })[0];
+        if (!stage) return getToday();
+        var ids = confirmed[stageKey] || (confirmed[stageKey] = []);
+        if (ids.indexOf(medId) < 0) {
+          captureUndo(stage);
+          ids.push(medId);
+        }
+        var all = stage.medicines.every(function (m) { return ids.indexOf(m.id) >= 0; });
+        if (all) {
+          results[stageKey] = { status: 'done', at: nowIso() };
+          advance();
+        }
+        return getToday();
+      }
+
+      function unconfirmMed(stageKey, medId) {
+        if (stageKey !== currentKey) return getToday();
+        var ids = confirmed[stageKey] || [];
+        confirmed[stageKey] = ids.filter(function (id) { return id !== medId; });
+        return getToday();
+      }
+
+      function confirmAll() {
+        var stage = getStages().filter(function (s) { return s.key === currentKey; })[0];
+        if (!stage) return getToday();
+        captureUndo(stage);
+        confirmed[stage.key] = stage.medicines.map(function (m) { return m.id; });
+        results[stage.key] = { status: 'done', at: nowIso() };
+        advance();
+        return getToday();
+      }
+
+      function skipStage() {
+        var stage = getStages().filter(function (s) { return s.key === currentKey; })[0];
+        if (!stage) return getToday();
+        captureUndo(stage);
+        results[stage.key] = { status: 'skipped', at: nowIso() };
+        advance();
+        return getToday();
+      }
+
+      function resetToday() {
+        confirmed = {};
+        results = {};
+        lastUndo = null;
+        currentKey = getStages().length ? getStages()[0].key : '';
+        finished = !getStages().length;
+        return getToday();
+      }
+
+      var history = {
+        ok: true,
+        days: [
+          { date: '2026-10-23', dateLabel: '10月23日 星期五', done: 4, skipped: 1, partial: 1, missed: 1, total: 6,
+            stages: [
+              { title: '第 1 顿 · 饭前', status: 'done', at: '2026-10-23T07:32:00+08:00', medicines: [
+                { name: '阿司匹林', amount: '1 片', confirmed: true },
+                { name: '二甲双胍', amount: '1 片', confirmed: true }] },
+              { title: '第 1 顿 · 饭后', status: 'done', at: '2026-10-23T08:10:00+08:00', medicines: [
+                { name: '维生素 D', amount: '1 粒', confirmed: true }] },
+              { title: '第 2 顿 · 饭前', status: 'partial', at: '', medicines: [
+                { name: '降压药', amount: '1 片', confirmed: true }] },
+              { title: '第 2 顿 · 饭后', status: 'skipped', at: '', medicines: [] },
+              { title: '第 3 顿 · 饭后', status: 'missed', at: '', medicines: [
+                { name: '钙片', amount: '2 片', confirmed: false }] }
+            ] },
+          { date: '2026-10-22', dateLabel: '10月22日 星期四', done: 5, skipped: 0, partial: 0, missed: 0, total: 5,
+            stages: [
+              { title: '第 1 顿 · 饭前', status: 'done', at: '2026-10-22T07:40:00+08:00', medicines: [
+                { name: '阿司匹林', amount: '1 片', confirmed: true }] },
+              { title: '第 1 顿 · 饭后', status: 'done', at: '2026-10-22T08:05:00+08:00', medicines: [
+                { name: '维生素 D', amount: '1 粒', confirmed: true }] },
+              { title: '第 2 顿 · 饭前', status: 'done', at: '2026-10-22T11:50:00+08:00', medicines: [
+                { name: '降压药', amount: '1 片', confirmed: true }] },
+              { title: '第 3 顿 · 饭前', status: 'done', at: '2026-10-22T17:55:00+08:00', medicines: [
+                { name: '阿司匹林', amount: '1 片', confirmed: true }] },
+              { title: '第 3 顿 · 饭后', status: 'done', at: '2026-10-22T19:10:00+08:00', medicines: [
+                { name: '钙片', amount: '2 片', confirmed: true }] }
+            ] }
+        ]
+      };
+
+      var status = {
+        ok: true, versionName: '0.2.0-m1', notificationsEnabled: true,
+        channelId: 'meal_reminder_v1', channelImportance: 4,
+        accessibilityEnabled: true, accessibilityConnected: true,
+        packageName: 'com.family.yaodian'
+      };
+
+      window.MedApp = {
+        getToday: getToday,
+        getHistory: function () { return JSON.stringify(history); },
+        getPlan: function () { return JSON.stringify(plan); },
+        getStatus: function () { return JSON.stringify(status); },
+        confirmMed: confirmMed,
+        unconfirmMed: unconfirmMed,
+        confirmAll: confirmAll,
+        skipStage: skipStage,
+        resetToday: resetToday,
+        undoLast: function () { undoNow(); return getToday(); },
+        saveMedicine: function (json) {
+          var input = JSON.parse(json);
+          if (input.id) {
+            plan.medicines = plan.medicines.map(function (m) {
+              return m.id === input.id ? Object.assign({}, m, input) : m;
+            });
+          } else {
+            input.id = 'med-' + Date.now();
+            input.enabled = true;
+            plan.medicines.push(input);
+          }
+          return JSON.stringify({ ok: true, id: input.id });
+        },
+        deleteMedicine: function (id) {
+          plan.medicines = plan.medicines.filter(function (m) { return m.id !== id; });
+          return JSON.stringify({ ok: true });
+        },
+        setMealCount: function (count) {
+          plan.meals = [];
+          for (var i = 1; i <= count; i++) plan.meals.push({ id: 'meal-' + i, label: '第 ' + i + ' 顿' });
+          return JSON.stringify({ ok: true });
+        },
+        setFontScale: function (scale) {
+          plan.fontScale = Number(scale);
+          return JSON.stringify({ ok: true, fontScale: plan.fontScale });
+        },
+        setUiMode: function (mode) {
+          plan.uiMode = mode === 'care' ? 'care' : 'normal';
+          return JSON.stringify({ ok: true, uiMode: plan.uiMode });
+        },
+        setPhotoMode: function (mode) {
+          plan.photoMode = (mode === 'list' || mode === 'home') ? mode : 'off';
+          return JSON.stringify({ ok: true, photoMode: plan.photoMode });
+        },
+        pickPhoto: function () { return JSON.stringify({ ok: true }); },
+        removePhoto: function () { return JSON.stringify({ ok: true }); },
+        getPhoto: function () { return ''; },
+        sendTestNotification: function () { return JSON.stringify({ ok: true }); },
+        previewLockCard: function () { return JSON.stringify({ ok: true }); },
+        exportBackup: function () { return JSON.stringify({ ok: true }); },
+        importBackup: function () { return JSON.stringify({ ok: true }); },
+        applyImport: function () { return JSON.stringify({ ok: true }); },
+        cancelImport: function () {},
+        openLockScreenCard: function () {},
+        openNotificationSettings: function () {},
+        openAccessibilitySettings: function () {},
+        openAppSettings: function () {}
+      };
+    })();
+  </script>
+  <script src="../web/app.js"></script>
+</body>
+</html>

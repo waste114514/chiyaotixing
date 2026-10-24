@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#CC101010"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:background="@drawable/lock_card_bg"
+        android:orientation="vertical"
+        android:padding="28dp">
+
+        <TextView
+            android:id="@+id/lockLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="大字卡片 · 备用"
+            android:textColor="#5F5A50"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/lockTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="今天第 1 顿 · 饭前"
+            android:textColor="#145C39"
+            android:textSize="32sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/lockText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="吃饭前吃：测试药 1 片"
+            android:textColor="#1A1A1A"
+            android:textSize="28sp" />
+
+        <Button
+            android:id="@+id/lockAction"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:layout_marginTop="24dp"
+            android:background="@drawable/lock_button_bg"
+            android:backgroundTint="@null"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:stateListAnimator="@null"
+            android:text="已吃"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/lockClose"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="12dp"
+            android:background="#00000000"
+            android:backgroundTint="@null"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:stateListAnimator="@null"
+            android:text="关闭"
+            android:textAllCaps="false"
+            android:textColor="#5F5A50"
+            android:textSize="22sp" />
+    </LinearLayout>
+</FrameLayout>

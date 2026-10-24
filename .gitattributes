@@ -1,0 +1,4 @@
+# 行尾统一：仓库内用 LF，Windows 脚本保持 CRLF
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
