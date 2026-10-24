@@ -182,7 +182,7 @@ public class MainActivity extends BridgeActivity {
                 Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("application/json");
-                intent.putExtra(Intent.EXTRA_TITLE, "药点备份-"
+                intent.putExtra(Intent.EXTRA_TITLE, "吃药提醒备份-"
                         + new SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(new Date())
                         + ".json");
                 startActivityForResult(intent, REQUEST_EXPORT);
@@ -519,7 +519,7 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public String openRepo() {
-            final String url = "https://github.com/waste114514/yaodian";
+            final String url = "https://github.com/waste114514/chiyaotixing";
             runOnUiThread(() -> {
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));

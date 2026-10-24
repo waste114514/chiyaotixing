@@ -44,7 +44,7 @@ public final class Notifier {
         if (channel == null) {
             channel = new NotificationChannel(
                     CHANNEL_ID,
-                    "药点（常驻）",
+                    "吃药提醒（常驻）",
                     NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("按餐次推进的常驻吃药提醒");
@@ -54,9 +54,9 @@ public final class Notifier {
             channel.setShowBadge(true);
             manager.createNotificationChannel(channel);
         } else if (channel.getName() != null
-                && !"药点（常驻）".contentEquals(channel.getName())) {
+                && !"吃药提醒（常驻）".contentEquals(channel.getName())) {
             // 应用改名后，更新已存在渠道的显示名（重要性等由用户控制，不改）。
-            channel.setName("药点（常驻）");
+            channel.setName("吃药提醒（常驻）");
             manager.createNotificationChannel(channel);
         }
     }

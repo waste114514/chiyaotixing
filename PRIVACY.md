@@ -1,6 +1,6 @@
 # 隐私说明
 
-药点是一个完全本地的应用。
+吃药提醒是一个完全本地的应用。
 
 ## 不做什么
 
@@ -28,7 +28,7 @@ files/med_data/
 
 | 权限 | 用途 |
 |---|---|
-| `POST_NOTIFICATIONS` | 显示药点通知（Android 13+ 需要用户允许） |
+| `POST_NOTIFICATIONS` | 显示吃药提醒通知（Android 13+ 需要用户允许） |
 | `RECEIVE_BOOT_COMPLETED` | 重启后恢复提醒 |
 | `VIBRATE` | 通知震动能力 |
 
@@ -41,3 +41,17 @@ files/med_data/
 ## 反馈
 
 如果发现隐私相关问题，请提 issue。
+
+## English
+
+Medication Reminder is fully local.
+
+- No `INTERNET` permission — the app cannot access the network.
+- No collection, no upload, no accounts, no analytics, no ads.
+- No access to contacts, location, SMS, camera, or microphone.
+- The accessibility service is only used to draw the lock-screen card (`canRetrieveWindowContent=false`); it never reads screen content.
+- All data is stored in the app's private storage: `files/med_data/plan.json`, `state.json`, `events-YYYY-MM.jsonl`, and `photos/`.
+- Uninstalling or clearing app data removes everything; Android cloud backup is disabled (`allowBackup=false`).
+- Permissions: `POST_NOTIFICATIONS` (reminders), `RECEIVE_BOOT_COMPLETED` (restore reminders after reboot), `VIBRATE`.
+- Photos are obtained through the system file/photo picker; the app does not request camera or storage permissions.
+- Exported backups are plain JSON containing medicine names and intake records. Keep them safe.

@@ -1,6 +1,6 @@
 {
   "appId": "com.family.yaodian",
-  "appName": "药点",
+  "appName": "吃药提醒",
   "webDir": "web",
   "server": {
     "androidScheme": "https"
